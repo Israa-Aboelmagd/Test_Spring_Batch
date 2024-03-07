@@ -11,15 +11,20 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
+import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.projection.TargetAware;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.example.area_batch.app.model.entity.source.Area;
+import com.example.area_batch.app.model.entity.source.Governorate;
 import com.example.area_batch.app.model.entity.target.TargetArea;
 import com.example.area_batch.app.model.entity.target.TargetBranch;
 import com.example.area_batch.app.model.entity.target.TargetGovernorate;
+import com.example.area_batch.app.repo.AreaRepo;
+import com.example.area_batch.app.repo.BranchRepo;
+import com.example.area_batch.app.repo.GovernorateRepo;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceUnit;
@@ -34,6 +39,9 @@ public class BatchConfig {
     private final EntityManagerFactory sourceEntityManagerFactory;
     @PersistenceUnit(unitName = "targetEntityManagerFactory")
     private final EntityManagerFactory targetEntityManagerFactory;
+    private final AreaRepo areaRepo;
+    private final GovernorateRepo governorateRepo;
+    private final BranchRepo branchRepo;
 
     @Bean
     public Job syncJob(){
@@ -59,20 +67,25 @@ public class BatchConfig {
         reader.setPageSize(100);
         return reader;
     }
-    private ItemProcessor<Area,TargetArea> processor(){
+    private ItemProcessor<Area,TargetArea> processor(){ 
         return sourceArea -> {
-            TargetArea targetArea = new TargetArea();
-            TargetGovernorate targetGovernorate = new TargetGovernorate();
-            TargetBranch targetBranch = new TargetBranch();
-            targetBranch.setName(sourceArea.getGovernorate().getBranch().getName()+"_suffix");
-            targetGovernorate.setBranch(targetBranch);
-            targetGovernorate.setName(sourceArea.getGovernorate().getName()+"_suffix");
-            targetArea.setName(sourceArea.getName()+"_suffix");
-            targetArea.setGovernorate(targetGovernorate);
+            if(areaRepo.findFirstByName(sourceArea.getName()).isPresent() )
+                return null;
 
-            return targetArea;
+            TargetBranch targetBranch = branchRepo
+                    .findFirstByName(sourceArea.getGovernorate().getBranch().getName())
+                    .orElse(TargetBranch.builder()
+                    .name(sourceArea.getGovernorate().getBranch().getName()).build());
+
+            TargetGovernorate targetGovernorate = governorateRepo
+                .findFirstByName(sourceArea.getGovernorate().getName())
+                .orElse(TargetGovernorate.builder().name(sourceArea.getGovernorate().getName())
+                .branch(targetBranch).build());
+
+            return TargetArea.builder().governorate(targetGovernorate).name(sourceArea.getName()).build();
         };
     }
+   
 
     private ItemWriter<TargetArea> writer(){
         JpaItemWriter<TargetArea> writer = new JpaItemWriter<>();
