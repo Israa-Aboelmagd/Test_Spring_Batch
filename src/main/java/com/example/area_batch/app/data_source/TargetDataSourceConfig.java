@@ -52,7 +52,7 @@ public class TargetDataSourceConfig {
             LocalContainerEntityManagerFactoryBean entityManagerFactory = builder
                 .dataSource(dataSource)
                 .packages("com.example.area_batch.app.model.entity.target")
-                .persistenceUnit("target")
+                .persistenceUnit("targetEntityManagerFactory")
                 .build();
             return entityManagerFactory;
 

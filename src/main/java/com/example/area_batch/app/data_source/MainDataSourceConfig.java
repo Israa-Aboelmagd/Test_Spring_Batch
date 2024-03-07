@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -33,7 +32,7 @@ public class MainDataSourceConfig {
     private String sourceDbPassword;
     @Value("${spring.datasource.source.driver-class-name}")
     private String sourceDbDriverClassName;
-
+   
     @Bean(name = "sourceDataSource")
     public DataSource dataSource(){
         HikariDataSource dataSource = new HikariDataSource();
@@ -50,7 +49,7 @@ public class MainDataSourceConfig {
             LocalContainerEntityManagerFactoryBean entityManagerFactory = builder
                 .dataSource(dataSource)
                 .packages("com.example.area_batch.app.model.entity.source")
-                .persistenceUnit("source")
+                .persistenceUnit("sourceEntityManagerFactory")
                 .build();
             return entityManagerFactory;
 
