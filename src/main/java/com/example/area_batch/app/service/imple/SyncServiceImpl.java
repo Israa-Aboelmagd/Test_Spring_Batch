@@ -10,6 +10,7 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.area_batch.app.service.SyncService;
@@ -24,6 +25,7 @@ public class SyncServiceImpl implements SyncService {
 
      
     @Override
+    @Scheduled(cron = "* */2 * * * * ")
     public void sync() throws JobExecutionAlreadyRunningException, JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException {
         long currentTime = System.currentTimeMillis();
         JobParameters jobParameters = new JobParametersBuilder()
