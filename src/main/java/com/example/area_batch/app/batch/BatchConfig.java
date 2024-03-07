@@ -22,6 +22,7 @@ import com.example.area_batch.app.model.entity.target.TargetBranch;
 import com.example.area_batch.app.model.entity.target.TargetGovernorate;
 
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnit;
 import lombok.AllArgsConstructor;
 
 @Configuration
@@ -29,8 +30,10 @@ import lombok.AllArgsConstructor;
 public class BatchConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager ;
-     private final EntityManagerFactory sourceAreaFactory;
-    private final EntityManagerFactory targetAreaFactory;
+    @PersistenceUnit(unitName = "sourceEntityManagerFactory")
+    private final EntityManagerFactory sourceEntityManagerFactory;
+    @PersistenceUnit(unitName = "targetEntityManagerFactory")
+    private final EntityManagerFactory targetEntityManagerFactory;
 
     @Bean
     public Job syncJob(){
@@ -39,10 +42,10 @@ public class BatchConfig {
         .build();
     }
 
-    
+
     private Step syncStep() {
        return new StepBuilder("syncStep", jobRepository)
-            .<Area,TargetArea>chunk(0, transactionManager)
+            .<Area,TargetArea>chunk(10, transactionManager)
             .reader(reader())
             .processor(processor())
             .writer(writer())
@@ -51,7 +54,7 @@ public class BatchConfig {
 
     private ItemReader<Area> reader(){
         JpaPagingItemReader<Area> reader = new JpaPagingItemReader<>();
-        reader.setEntityManagerFactory(sourceAreaFactory);
+        reader.setEntityManagerFactory(sourceEntityManagerFactory);
         reader.setQueryString("select a from Area a");
         reader.setPageSize(100);
         return reader;
@@ -73,18 +76,9 @@ public class BatchConfig {
 
     private ItemWriter<TargetArea> writer(){
         JpaItemWriter<TargetArea> writer = new JpaItemWriter<>();
-        writer.setEntityManagerFactory(targetAreaFactory);
+        writer.setEntityManagerFactory(targetEntityManagerFactory);
         return writer;
     }
 
- 
-// public Step sampleStep(JobRepository jobRepository, 
-// 		PlatformTransactionManager transactionManager) { 
-// 	return new StepBuilder("sampleStep", jobRepository)
-// 				.<String, String>chunk(10, transactionManager) 
-// 				.reader(itemReader())
-// 				.writer(itemWriter())
-// 				.build();
-// }
     
 }
